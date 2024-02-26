@@ -1,8 +1,8 @@
 {
     "name": "control_library",
     "version": "0.1",
-    "description": "Library to help control of OwnTech power electronics."
-    "keywords": "OwnTech Power Electronics Control ",
+    "description": "Library to help control of OwnTech power electronics.",
+    "keywords": "OwnTech Power Electronics Control",
     "repository":
     {
       "type": "git", 
