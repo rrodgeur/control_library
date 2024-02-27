@@ -12,7 +12,19 @@
     [
       {
         "name": "Regis Ruelland",
-        "email": "regis.ruelland@lass.fr"
+        "email": "regis.ruelland@laas.fr"
+      },
+      {
+          "name": "Luiz Villa",
+          "email":"luiz.villa@laas.fr"
+      },
+      {
+          "name": "Guillaume Arthaud",
+          "email": "guillaume.arthaud@laas.fr"
+      },
+      {
+          "name": "Ayoub Farah Hassan",
+          "email": "ayoub.farah-hassan@laas.fr"
       }
     ],
     "license": "LGPLV2.1",
