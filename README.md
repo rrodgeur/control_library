@@ -6,23 +6,23 @@ This library has been integrated and tested on [TWIST](https://github.com/owntec
 
 The integration is based on the dedicated [OwnTech Power API](https://github.com/owntech-foundation/Core).
 
-__Remarks__: The library is currently not optimized to be (we hope) easier to read.
+__Remarks__: The library is currently not optimized to make it easier to read (we hope).
 
 ## Features
 
 The library provides the following functionalities mainly through C++ objects :
- * `Pid()`: standard form of the PID regulator.
- * `Pr()` : Proportional Resonant regulator.
- * `Rst()` : Discrete form of Polynomial regulator.
+ * `Pid()`: Standard form of the PID regulator.
+ * `Pr()`: Proportional Resonant regulator.
+ * `Rst()`: Discrete form of Polynomial regulator.
  * `PllSinus()`: Software PLL (Phased Lock Loop)
  * Digital filters: `LowPassFirstOrdreFilter()`, `NotchFilter()`
 
-`Pid()`, `Pr()` and `Rst()` inherit from the `Controller()` class which fix the same interface.
+`Pid()`, `Pr()` and `Rst()` inherit from the `Controller()` class which define the same interface.
 
 
 ## Installation
 
-We describe here the process to use it with the [Power API](https://github.com/owntech-foundation/Core) which has beed designed to use PlatformIO.
+We describe here the process to use it with the [Power API](https://github.com/owntech-foundation/Core) which has been designed to use PlatformIO.
 
 The installation here recall the procedure of using a library in [PlatformIO](https://docs.platformio.org/en/latest/librarymanager/index.html).
 
@@ -42,7 +42,7 @@ Links which inspired this work:
 * PID:
   * K. Astrom et T. Hagglund, Advanced PID Control.
 * PR:
-  * A. Gï, « Digital Resonant Current Controllers For Voltage Source Converters ». [En ligne]. Disponible sur: http://agyepes.webs.uvigo.es/files/Thesis.pdf
+  * A. Gï, « Digital Resonant Current Controllers For Voltage Source Converters ». [Thesis](http://agyepes.webs.uvigo.es/files/Thesis.pdf)
 * RST:
   * I. D. Landau, C. Cyrot, A. Voda, et D. Rey, « Robust digital control of flexible structures using the combined pole placement/sensitivity function shaping method », in Proceedings of 1994 American Control Conference - ACC ’94, Baltimore, MD, USA: IEEE, 1994, p. 283‑288. doi: 10.1109/ACC.1994.751743.
   * I. D. Landau et G. Zito, « Digital Control Systems - New edition (I. D. Landau &amp; G. Zito) », 2020, doi: 10.13140/RG.2.2.19321.49764.
