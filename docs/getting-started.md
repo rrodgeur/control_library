@@ -43,7 +43,7 @@ static float32_t lower_bound = 0.0F;
 static float32_t Ts = 100.0e-6F;
 ```
 
-We define the parameter structure. Each parameter is defined [here](structPidParams.md).
+We define the parameter structure. Each parameter is defined [here](../../structPidParams).
 ```c++
 static PidParams pid_params(Ts, kp, Ti, Td, N, lower_bound, upper_bound);
 ```
