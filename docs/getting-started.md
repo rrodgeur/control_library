@@ -23,6 +23,8 @@ For each _`Controller`_ like (`Pid`, `Rst`, `Pr`) we have to define a parameter 
 
 We define constants used to initialize the parameter structure.
 ```c++
+#include "pid.h"
+
 static float32_t Ti = 7.5175e-5F;
 static float32_t Td = 0.0F;
 static float32_t N = 0.0F;
