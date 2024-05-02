@@ -40,6 +40,9 @@ int8_t Pr::init(PrParams p) {
     _Kr = p.Kr;
     _inverse_Kr = 1.0 / p.Kr;
 
+    _w0 = p.w0;
+    _phi_prime = p.phi_prime;
+
     float b[2];
     b[0] = p.Ts * ot_cos(p.phi_prime);
     b[1] = -p.Ts * ot_cos(p.phi_prime - p.w0 * p.Ts);
@@ -78,4 +81,10 @@ void Pr::reset(void) {
     _B.reset();
     _resonant = 0.0;
     _output = 0.0;
+}
+
+void Pr::setW0(float32_t value) {
+    _w0 = value;
+   _B.setCoeff(1, -_Ts * ot_cos(_phi_prime - _w0 * _Ts ));
+   _A.setCoeff(0, -2 * ot_cos(_Ts * _w0));
 }

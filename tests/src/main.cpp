@@ -8,7 +8,7 @@
 #include <pr.h>
 #include <filters.h>
 #include <transform.h>
-LOG_MODULE_REGISTER(test_control, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(test_control, LOG_LEVEL_INF);
 
 ZTEST_SUITE(trigo, NULL, NULL, NULL, NULL, NULL);
 
@@ -263,6 +263,31 @@ ZTEST(test_pr, test_calculate) {
         zexpect_within(u_nosat[k+1], out, 3e-4, "k=%d u[k] = %f, pid u = %f", k, u_nosat[k+1], out);
     }
 
+}
+
+ZTEST(test_pr, test_setw0) {
+    float32_t Ts = 1.0e-3F;
+    float32_t Kp = 0.0F;
+    float32_t Kr = 1.0F;
+    float32_t w = 314.159F; 
+    float32_t phi = 0.0F;
+    float32_t lower_bound = -1.0F;
+    float32_t upper_bound = 1.0F;
+    PrParams params(Ts, Kp, Kr, w, phi, lower_bound, upper_bound);
+    Pr pr;
+    pr.init(params);
+    float32_t output_50[3] = {0.001, 0.001951, 0.002760};
+    float32_t output_100[3] = {0.001, 0.001809, 0.002118};
+    for (int k=0; k<3; k++) {
+        float32_t output = pr.calculateWithReturn(1.0, 0.0);
+        zexpect_within(output, output_50[k], 1e-6);
+    }
+    pr.setW0(628.3185);
+    pr.reset();
+    for (int k=0; k<3; k++) {
+        float32_t output = pr.calculateWithReturn(1.0, 0.0);
+        zexpect_within(output, output_100[k], 1e-6);
+    }
 }
 
 ZTEST_SUITE(test_filters, NULL, NULL, NULL, NULL, NULL);
