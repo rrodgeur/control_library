@@ -123,6 +123,21 @@ class Controller
         }
         return u;
     };
+
+    /**
+     * @brief change lower an upper bounds of output saturation.
+     *
+     * @param lower  
+     * @param upper
+     * @return 
+     */
+    virtual void setBounds(float32_t lower, float32_t upper) {
+        if (lower < upper) {
+            _lower_bound = lower;
+            _upper_bound = upper;
+        }
+    }
+
 protected:
     float32_t _Ts; // sample time
     outputs_T _lower_bound;
