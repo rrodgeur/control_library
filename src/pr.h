@@ -81,11 +81,20 @@ public:
 
     void reset(void);
 
+    /**
+     * @brief change the pulsation value
+     * 
+     * @param w0 pulsation in [rad/s]
+     */
+    void setW0(float value);
+
 private:
     float32_t _Ts;
     float32_t _Kp;
     float32_t _Kr;
     float32_t _inverse_Kr;
+    float32_t _w0;
+    float32_t _phi_prime;
     Fir _B; // numerator of the resonator
     Fir _A; // denominator of the resonator
     float32_t _resonant; // resonator output
