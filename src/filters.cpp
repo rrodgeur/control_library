@@ -25,17 +25,13 @@
 #include <errno.h>
 #include <zephyr/logging/log.h>
 #include "filters.h"
-#include "pid.h"
-#include "trigo.h"
-
-LOG_MODULE_DECLARE(ot_control, LOG_LEVEL_DBG);
-
+LOG_MODULE_DECLARE(ot_control);
 
 LowPassFirstOrderFilter::LowPassFirstOrderFilter(float32_t Ts, float32_t tau) {
     this->init(Ts, tau);
 }
 
-uint8_t LowPassFirstOrderFilter::init(float32_t Ts, float32_t tau) {
+int8_t LowPassFirstOrderFilter::init(float32_t Ts, float32_t tau) {
     _Ts = Ts;
     _tau = tau;
     if (_tau <= 0.0) {
@@ -68,13 +64,11 @@ void LowPassFirstOrderFilter::reset(float32_t value) {
     _previous_value = value;
 }
 
-
 NotchFilter::NotchFilter(float32_t Ts, float32_t f0, float32_t bandwidth) {
     this->init(Ts, f0, bandwidth);
 }
 
-
-uint8_t NotchFilter::init(float32_t Ts, float32_t f0, float32_t bandwidth) {
+int8_t NotchFilter::init(float32_t Ts, float32_t f0, float32_t bandwidth) {
     _Ts = Ts;
     _f0 = f0;
     _bandwidth = bandwidth;
@@ -109,71 +103,132 @@ void NotchFilter::reset() {
     _A.reset();
 }
 
-PllSinus::PllSinus(float32_t Ts, float32_t amplitude, float32_t f0, float32_t rt) {
-    this->init(Ts, amplitude, f0, rt);
+/*** Pll *********************************************************************/
+
+PllDatas Pll::calculateWithReturn(float32_t signal) {
+    float32_t error; 
+    float32_t error_filtered;
+    error = _error(signal, _angle);
+    error_filtered = _filt_error(error);
+    _w = _vco(error);
+    _angle = ot_modulo_2pi(_angle + _w * _Ts);
+    return PllDatas(_w, _angle, error_filtered);
 }
 
-uint8_t PllSinus::init(float32_t Ts, float32_t amplitude, float32_t f0, float32_t rt) {
-
-    float32_t xi = 0.7;
-    float32_t wn;
-    float32_t Kp;
-    float32_t Ti;
-
+int8_t Pll::_check_and_get_args(float32_t Ts, float32_t f0, float32_t rise_time) {
     if (Ts < 0) {
         LOG_ERR("Ts must be > 0");
         return -EINVAL;
     }
-    if (rt <= 1.e-6) {
+    _Ts = Ts;
+
+    if (rise_time <= 1.e-6) {
         LOG_ERR("rise time must be > 0");
         return -EINVAL;
     }
-    _rt = rt;
+    _rt = rise_time;
 
+    if (f0 < 0.0) {
+        LOG_ERR("f0 must be > 0");
+        return -EINVAL;
+    }
+    _f0 = f0;
+    return 0;
+}
+
+void Pll::reset(float32_t f0=0.0) {
+    _angle = 0.0;
+    _w = f0 * 2.0 * PI;
+    _pi.reset(_w);
+}
+
+/*** PllSinus ****************************************************************/
+PllSinus::PllSinus(float32_t Ts, float32_t amplitude, float32_t f0, float32_t rt) {
+    this->init(Ts, amplitude, f0, rt);
+}
+
+int8_t PllSinus::init(float32_t Ts, float32_t amplitude, float32_t f0, float32_t rise_time) {
+    if (Pll::_check_and_get_args(Ts, f0, rise_time) != 0) {
+        LOG_ERR("arg problems");
+        return -EINVAL;
+    }
     if (amplitude <= 1.e-6) {
         LOG_ERR("amplitude must be > 0");
         return -EINVAL;
     }
     _amplitude = amplitude;
 
-    if (f0 < 0.0) {
-        LOG_ERR("f0 must be > 0");
-        return -EINVAL;
-    }
-    _Ts = Ts;
-    _f0 = f0;
-
-    wn  = 3.0/ _rt;
-    Kp = 2.0 * wn * xi / _amplitude;
-    Ti = 2.0 * xi / wn;
-    PidParams pi_params(_Ts, Kp, Ti, 0.0, 0.0, -100.0 * _f0, 100.0 * _f0);
-    _pi.init(pi_params);
     _notch.init(_Ts, 2 * _f0, 0.2*_f0);
-    _angle = 0.0;
-    _w = 0.0;
-
+    _init_pi(rise_time);
     return 0;
 }
 
-PllDatas PllSinus::calculateWithReturn(float32_t signal) {
-    float32_t error; 
-    float32_t error_filtered;
-    error = ot_cos(_angle) * signal;
-
-    error_filtered = _notch.calculateWithReturn(error);
-
-    _w  = _pi.calculateWithReturn(error_filtered, 0.0);
-    if (_w < 0.0) _w = -_w;
-    
-    _angle = ot_modulo_2pi(_angle + _w * _Ts);
-
-    return PllDatas(_w, _angle, error_filtered);
+float32_t PllSinus::_error(float32_t signal, float32_t angle) {
+    return ot_cos(_angle) * signal;
     }
 
+float32_t PllSinus::_filt_error(float32_t error) {
+    return _notch.calculateWithReturn(error);
+}
+
+float32_t PllSinus::_vco(float32_t error) {
+    float32_t value;
+    value  = _pi.calculateWithReturn(error, 0.0);
+    if (value < 0.0) value = -value;
+    return value;
+}
+
+void PllSinus::_init_pi(float32_t rise_time) {
+    float32_t xi = 0.7;
+    float32_t wn  = 3.0/ rise_time;
+    float32_t Kp = 2.0 * wn * xi / _amplitude;
+    float32_t Ti = 2.0 * xi / wn;
+    PidParams pi_params(_Ts, Kp, Ti, 0.0, 0.0, -100.0 * _f0, 100.0 * _f0);
+    _pi.init(pi_params);
+}
 
 void PllSinus::reset(float32_t f0=0.0) {
-    _angle = 0.0;
-    _w = f0*2.0*PI;
     _notch.reset();
-    _pi.reset(_w);
+    Pll::reset(f0);
 }
+
+/*** PllAngle ****************************************************************/
+int8_t PllAngle::init(float32_t Ts, float32_t f0, float32_t rise_time) {
+    if (Pll::_check_and_get_args(Ts, f0, rise_time) != 0)
+    {
+        LOG_ERR("args problem");
+        return -EINVAL;
+    }
+    _init_pi(rise_time);
+    return 0;
+}
+
+PllAngle::PllAngle(float32_t Ts, float32_t f0, float32_t rt) {
+    this->init(Ts, f0, rt);
+}
+
+float32_t PllAngle::_error(float32_t ref, float32_t mes) {
+    return ot_sin(ref - mes);
+}
+
+inline float32_t PllAngle::_filt_error(float32_t error) {
+    return error;
+}
+
+float32_t PllAngle::_vco(float32_t error_filtered) {
+    float32_t value;
+    value  = _pi.calculateWithReturn(error_filtered, 0.0);
+    return value;
+}
+
+void PllAngle::_init_pi(float32_t rise_time) {
+    float32_t xi = 0.7;
+    float32_t wn = 3.0 / rise_time;
+    float32_t Ki = wn * wn;
+    float32_t Kp = 2 * wn * xi;
+    float32_t Ti = Kp / Ki;
+    PidParams pi_params(_Ts, Kp, Ti, 0.0, 0.0, -100.0 * _f0, 100.0 * _f0);
+    _pi.init(pi_params);
+}
+
+
