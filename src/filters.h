@@ -94,7 +94,7 @@ struct PllDatas {
 
 class Pll {
 public:
-    Pll();
+    Pll() {};
     PllDatas calculateWithReturn(float32_t signal);
     virtual void reset(float32_t f0);
 protected:
