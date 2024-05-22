@@ -25,14 +25,14 @@
 #ifndef FILTERS_H_
 #define FILTERS_H_
 #include "arm_math_types.h"
+#include "trigo.h" 
 #include "fir.h"
 #include "pid.h"
-#include "trigo.h" 
 
 class LowPassFirstOrderFilter {
 public:
     LowPassFirstOrderFilter(float32_t Ts, float32_t tau);
-    uint8_t init(float32_t Ts, float32_t tau);
+    int8_t init(float32_t Ts, float32_t tau);
     float32_t calculateWithReturn(float32_t signal);
     void reset();
     void reset(float32_t value);
@@ -64,7 +64,7 @@ public:
      * @param f0 central frequency to stop in [Hz]
      * @param bandwidth  frequency band [Hz] around f0 where gain < -3dB 
      */
-    uint8_t init(float32_t Ts, float32_t f0, float32_t bandwidth);
+    int8_t init(float32_t Ts, float32_t f0, float32_t bandwidth);
     float32_t calculateWithReturn(float32_t signal);
     void reset();
 private:
@@ -92,7 +92,26 @@ struct PllDatas {
     float32_t error;
 };
 
-class PllSinus {
+class Pll {
+public:
+    Pll() {};
+    PllDatas calculateWithReturn(float32_t signal);
+    virtual void reset(float32_t f0);
+protected:
+    virtual float32_t _error(float32_t ref, float32_t mes) = 0;
+    virtual float32_t _filt_error(float32_t error) = 0;  
+    virtual float32_t _vco(float32_t error) = 0;
+    virtual void _init_pi(float32_t rise_time) = 0;
+    int8_t _check_and_get_args(float32_t Ts, float32_t f0, float32_t rise_time);
+    float32_t _Ts;
+    float32_t _f0;
+    float32_t _rt;
+    Pid _pi;
+    float32_t _w;
+    float32_t _angle;
+};
+
+class PllSinus: public Pll {
 public:
     /**
      * @brief a software phase lock loop on a sinusoidal signal 
@@ -104,19 +123,36 @@ public:
      */
     PllSinus() {};
     PllSinus(float32_t Ts, float32_t amplitude, float32_t f0, float32_t rt);
-    uint8_t init(float32_t Ts, float32_t amplitude, float32_t f0, float32_t rt);
-    PllDatas calculateWithReturn(float32_t signal);
-    void reset(float32_t f0);
-
+    int8_t init(float32_t Ts, float32_t amplitude, float32_t f0, float32_t rt);
+    virtual void reset(float32_t f0) override;
+protected:
+    virtual float32_t _error(float32_t ref, float32_t mes) override;
+    virtual float32_t _filt_error(float32_t error) override;
+    virtual float32_t _vco(float32_t error) override;
+    virtual void _init_pi(float32_t rise_time) override;
 private:
-    float32_t _Ts;
     float32_t _amplitude;
-    float32_t _f0;
-    float32_t _rt;
-
     NotchFilter _notch;
-    Pid _pi;
-    float32_t _w;
-    float32_t _angle;
 };
+
+class PllAngle: public Pll {
+public:
+    /**
+     * @brief a software phase lock loop on a sawtooth signal 
+     *
+     * @param Ts sample time in [s]
+     * @param f0 mean frequency of the signal to track
+     * @param rt rise time of the loop in [s].
+     */
+    PllAngle() {};
+    PllAngle(float32_t Ts, float32_t f0, float32_t rt);
+    int8_t init(float32_t Ts, float32_t f0, float32_t rt);
+protected:
+    virtual float32_t _error(float32_t ref, float32_t mes) override;
+    virtual float32_t _filt_error(float32_t error) override;
+    virtual float32_t _vco(float32_t error) override;
+    virtual void _init_pi(float32_t rise_time) override;
+};
+
+
 #endif
